@@ -3,24 +3,25 @@
 
 extern crate panic_halt;
 
-use particle_xenon::{prelude::*, Board};
-use cortex_m_rt::{entry};
+use cortex_m_rt::entry;
 use nrf52840_hal::gpio::Level;
+use nrf52840_hal::Delay;
+use particle_argon::{prelude::*, Board};
 
 #[entry]
 fn main() -> ! {
     let board = Board::take().unwrap();
 
-    let mut timer = board.TIMER4.constrain();
+    let mut timer = Delay::new(board.SYST);
 
     let mut led = board.pins.d7.into_push_pull_output(Level::Low);
 
-    led.set_high();
+    led.set_high().unwrap();
 
     loop {
-        led.set_high();
-        timer.delay(100_000);
-        led.set_low();
-        timer.delay(100_000);
+        led.set_high().unwrap();
+        timer.delay_ms(1000_u32);
+        led.set_low().unwrap();
+        timer.delay_ms(1000_u32);
     }
 }

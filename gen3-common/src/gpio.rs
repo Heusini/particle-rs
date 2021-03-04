@@ -29,35 +29,33 @@ pub struct Pins {
 }
 
 impl Pins {
-    pub fn new(p0: nrf52840_hal::target::P0, p1: nrf52840_hal::target::P1) -> Self {
-        use gpio::GpioExt;
-
-        let pins0 = p0.split();
-        let pins1 = p1.split();
+    pub fn new(p0: nrf52840_hal::pac::P0, p1: nrf52840_hal::pac::P1) -> Self {
+        let pins0 = p0::Parts::new(p0);
+        let pins1 = p1::Parts::new(p1);
 
         Self {
-            rst: pins0.p0_18,
-            mode: pins0.p0_11,
-            a0: pins0.p0_03,
-            a1: pins0.p0_04,
-            a2: pins0.p0_28,
-            a3: pins0.p0_29,
-            a4: pins0.p0_30,
-            a5: pins0.p0_31,
-            sck: pins1.p1_15,
-            mosi: pins1.p1_13,
-            miso: pins1.p1_14,
-            rx: pins0.p0_08,
-            tx: pins0.p0_06,
-            d0: pins0.p0_26,
-            d1: pins0.p0_27,
-            d2: pins1.p1_01,
-            d3: pins1.p1_02,
-            d4: pins1.p1_08,
-            d5: pins1.p1_10,
-            d6: pins1.p1_11,
-            d7: pins1.p1_12,
-            d8: pins1.p1_03,
+            rst: pins0.p0_18.into_floating_input(),
+            mode: pins0.p0_11.into_floating_input(),
+            a0: pins0.p0_03.into_floating_input(),
+            a1: pins0.p0_04.into_floating_input(),
+            a2: pins0.p0_28.into_floating_input(),
+            a3: pins0.p0_29.into_floating_input(),
+            a4: pins0.p0_30.into_floating_input(),
+            a5: pins0.p0_31.into_floating_input(),
+            sck: pins1.p1_15.into_floating_input(),
+            mosi: pins1.p1_13.into_floating_input(),
+            miso: pins1.p1_14.into_floating_input(),
+            rx: pins0.p0_08.into_floating_input(),
+            tx: pins0.p0_06.into_floating_input(),
+            d0: pins0.p0_26.into_floating_input(),
+            d1: pins0.p0_27.into_floating_input(),
+            d2: pins1.p1_01.into_floating_input(),
+            d3: pins1.p1_02.into_floating_input(),
+            d4: pins1.p1_08.into_floating_input(),
+            d5: pins1.p1_10.into_floating_input(),
+            d6: pins1.p1_11.into_floating_input(),
+            d7: pins1.p1_12.into_floating_input(),
+            d8: pins1.p1_03.into_floating_input(),
         }
     }
 }

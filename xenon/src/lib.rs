@@ -6,7 +6,8 @@ pub mod prelude {
 
 pub use particle_gen3_common::*;
 
-use nrf52840_hal::target::{self as pac, CorePeripherals, Peripherals};
+use nrf52840_hal::pac;
+use nrf52840_hal::pac::{CorePeripherals, Peripherals};
 
 #[allow(non_snake_case)]
 pub struct Board {
