@@ -67,6 +67,9 @@ pub struct Board {
     /// nRF52 peripheral: UART0
     pub UART0: pac::UART0,
 
+    pub UARTE0: pac::UARTE0,
+    pub UARTE1: pac::UARTE1,
+
     /// nRF52 peripheral: SPIM0
     pub SPIM0: pac::SPIM0,
 
@@ -257,6 +260,8 @@ impl Board {
             RADIO: p.RADIO,
 
             UART0: p.UART0,
+            UARTE0: p.UARTE0,
+            UARTE1: p.UARTE1,
             SPIM0: p.SPIM0,
             SPIS0: p.SPIS0,
             TWIM0: p.TWIM0,

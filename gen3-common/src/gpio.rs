@@ -26,6 +26,13 @@ pub struct Pins {
     pub d6: p1::P1_11<gpio::Input<gpio::Floating>>,
     pub d7: p1::P1_12<gpio::Input<gpio::Floating>>,
     pub d8: p1::P1_03<gpio::Input<gpio::Floating>>,
+
+    pub bootmode: p0::P0_16<gpio::Input<gpio::Floating>>, //BOOT_MODE = P0.16
+    pub wifi_en: p0::P0_24<gpio::Input<gpio::Floating>>,  // WIFI_EN = P0.24
+    pub esptx: p1::P1_04<gpio::Input<gpio::Floating>>,    // txd = P1.04
+    pub esprx: p1::P1_05<gpio::Input<gpio::Floating>>,    // rxd = P1.05
+    pub cts: p1::P1_07<gpio::Input<gpio::Floating>>,      // cts = P1.07
+    pub rts: p1::P1_06<gpio::Input<gpio::Floating>>,      // rts = P1.06
 }
 
 impl Pins {
@@ -56,6 +63,13 @@ impl Pins {
             d6: pins1.p1_11.into_floating_input(),
             d7: pins1.p1_12.into_floating_input(),
             d8: pins1.p1_03.into_floating_input(),
+
+            bootmode: pins0.p0_16.into_floating_input(),
+            wifi_en: pins0.p0_24.into_floating_input(),
+            esptx: pins1.p1_04.into_floating_input(),
+            esprx: pins1.p1_05.into_floating_input(),
+            cts: pins1.p1_07.into_floating_input(),
+            rts: pins1.p1_06.into_floating_input(),
         }
     }
 }
