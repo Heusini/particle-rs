@@ -32,7 +32,7 @@ fn main() -> ! {
 
     let mut wifi_en = board.pins.wifi_en.into_open_drain_output(
         nrf52840_hal::gpio::OpenDrainConfig::Standard0Disconnect1,
-        Level::Low,
+        Level::High,
     );
 
     wifi_en.set_low().unwrap();
@@ -47,14 +47,14 @@ fn main() -> ! {
     let wifi_pins = uarte::Pins {
         txd: board
             .pins
-            .esptx
+            .esprx
             .into_push_pull_output(Level::High)
             .degrade(),
-        rxd: board.pins.esprx.into_floating_input().degrade(),
+        rxd: board.pins.esptx.into_floating_input().degrade(),
         // cts: None,
         // rts: None,
-        cts: Some(board.pins.cts.into_floating_input().degrade()),
-        rts: Some(board.pins.rts.into_push_pull_output(Level::High).degrade()),
+        cts: Some(board.pins.rts.into_floating_input().degrade()),
+        rts: Some(board.pins.cts.into_push_pull_output(Level::High).degrade()),
     };
     let mut t = Timer::new(board.TIMER0);
 
@@ -64,9 +64,9 @@ fn main() -> ! {
     let mut uart = uarte::Uarte::new(board.UARTE0, pins, parity, baudrate);
     let mut wifi_uart = uarte::Uarte::new(board.UARTE1, wifi_pins, parity, wifi_baudrate);
 
-    let mut led = board.pins.d7.into_push_pull_output(Level::Low);
+    let mut led = board.pins.d7.into_push_pull_output(Level::High);
 
-    let mut buffer: [u8; 16] = [0; 16];
+    let mut buffer: [u8; 4] = [0; 4];
     let mut read_buf: [u8; 16] = [0; 16];
 
     let _result = CommandBuilder::create_execute(&mut buffer, true)
@@ -150,15 +150,16 @@ fn main() -> ! {
         // delay.delay_ms(100_u32);
         // uart.write_fmt(format_args!("Start writing to wifi\r\n"))
         //     .unwrap();
-        uart.write_str("AT\r\n").unwrap();
-        let write_result = wifi_uart.write_str("AT\r\n");
+        uart.write_fmt(format_args!("Write buffer {:?}\r\n", &buffer))
+            .unwrap();
+        let write_result = wifi_uart.write(&buffer);
         uart.write_fmt(format_args!("Write Result buffer: {:?}\r\n", &write_result))
             .unwrap();
 
         // let read_res = wifi_uart.read(&mut read_buf);
         // let x = read_buf[0];
 
-        let read_result = match wifi_uart.read_timeout(&mut read_buf, &mut t, 1_000_000_u32) {
+        let read_result = match wifi_uart.read_timeout(&mut read_buf, &mut t, 5_000_000_u32) {
             Ok(_) => 128,
             Err(uarte::Error::Timeout(n)) => n,
             Err(uarte::Error::TxBufferTooLong) => 200,
@@ -170,8 +171,9 @@ fn main() -> ! {
 
         uart.write_fmt(format_args!("read bytes: {}\r\n", read_result))
             .unwrap();
-        uart.write_fmt(format_args!("readbuffer: {:?}\r\n", &read_buf))
-            .unwrap();
+        uart.write(&read_buf).unwrap();
+
+        delay.delay_ms(1000_u32);
 
         // led.set_low().unwrap();
         // delay.delay_ms(100_u32);
