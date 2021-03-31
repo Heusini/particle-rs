@@ -4,10 +4,15 @@ pub mod prelude {
     pub use nrf52840_hal::prelude::*;
 }
 
+mod wifi;
+
 pub use particle_gen3_common::*;
 
+use nrf52840_hal::gpio as nrf_gpio;
 use nrf52840_hal::pac;
 use nrf52840_hal::pac::{CorePeripherals, Peripherals};
+use nrf52840_hal::uarte;
+use nrf52840_hal::Delay;
 
 #[allow(non_snake_case)]
 pub struct Board {
@@ -222,9 +227,46 @@ pub struct Board {
 
     /// nRF52 peripheral: I2S
     pub I2S: pac::I2S,
+    // wifi_en: p0::P0_16<nrf_gpio::Output<nrf_gpio::OpenDrain>>,
+    // boot_mode: p0::P0_24<nrf_gpio::Output<nrf_gpio::PushPull>>,
+    // esp_tx: p1::P1_05<nrf_gpio::Output<nrf_gpio::PushPull>>,
+    // esp_rx: p1::P1_04<nrf_gpio::Input<nrf_gpio::Floating>>,
+    // esp_rts: p1::P1_07<nrf_gpio::Output<nrf_gpio::PushPull>>,
+    // esp_cts: p1::P1_06<nrf_gpio::Input<nrf_gpio::Floating>>,
 }
 
 impl Board {
+    pub fn WIFI(self) -> wifi::WIFI {
+        let wifi_pins = uarte::Pins {
+            txd: self
+                .pins
+                .p1_05
+                .into_push_pull_output(nrf_gpio::Level::Low)
+                .degrade(),
+            rxd: self.pins.p1_04.degrade(),
+            cts: Some(self.pins.p1_06.degrade()),
+            rts: Some(
+                self.pins
+                    .p1_07
+                    .into_push_pull_output(nrf_gpio::Level::High)
+                    .degrade(),
+            ),
+        };
+        let uarte = uarte::Uarte::new(
+            self.UARTE1,
+            wifi_pins,
+            uarte::Parity::EXCLUDED,
+            uarte::Baudrate::BAUD921600,
+        );
+
+        let wifi_en = self.pins.p0_16.into_open_drain_output(
+            nrf_gpio::OpenDrainConfig::Standard0Disconnect1,
+            nrf_gpio::Level::Low,
+        );
+        let bootmode = self.pins.p0_24.into_push_pull_output(nrf_gpio::Level::Low);
+
+        wifi::WIFI::new(uarte, wifi_en, bootmode, Delay::new(self.SYST))
+    }
     pub fn take() -> Option<Self> {
         Some(Self::new(CorePeripherals::take()?, Peripherals::take()?))
     }
@@ -238,6 +280,15 @@ impl Board {
 
         Self {
             pins,
+            // wifi_en: pins.p0_16.into_open_drain_output(
+            //     nrf_gpio::OpenDrainConfig::Standard0Disconnect1,
+            //     nrf_gpio::Level::Low,
+            // ),
+            // boot_mode: pins.p0_24.into_push_pull_output(nrf_gpio::Level::Low),
+            // esp_tx: pins.p1_05.into_push_pull_output(nrf_gpio::Level::High),
+            // esp_rx: pins.p1_04,
+            // esp_cts: pins.p1_06,
+            // esp_rts: pins.p1_07.into_push_pull_output(nrf_gpio::Level::Low),
             // Core peripherals
             CBP: cp.CBP,
             CPUID: cp.CPUID,
