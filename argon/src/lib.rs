@@ -4,6 +4,7 @@ pub mod prelude {
     pub use nrf52840_hal::prelude::*;
 }
 
+pub mod serial;
 mod wifi;
 
 pub use particle_gen3_common::*;
@@ -12,7 +13,7 @@ use nrf52840_hal::gpio as nrf_gpio;
 use nrf52840_hal::pac;
 use nrf52840_hal::pac::{CorePeripherals, Peripherals};
 use nrf52840_hal::uarte;
-use nrf52840_hal::Delay;
+use nrf52840_hal::Timer;
 
 #[allow(non_snake_case)]
 pub struct Board {
@@ -73,7 +74,6 @@ pub struct Board {
     pub UART0: pac::UART0,
 
     pub UARTE0: pac::UARTE0,
-    pub UARTE1: pac::UARTE1,
 
     /// nRF52 peripheral: SPIM0
     pub SPIM0: pac::SPIM0,
@@ -198,9 +198,8 @@ pub struct Board {
     /// nRF52 peripheral: TIMER3
     pub TIMER3: pac::TIMER3,
 
-    /// nRF52 peripheral: TIMER4
-    pub TIMER4: pac::TIMER4,
-
+    // /// nRF52 peripheral: TIMER4
+    // pub TIMER4: pac::TIMER4,
     /// nRF52 peripheral: PWM0
     pub PWM0: pac::PWM0,
 
@@ -227,6 +226,8 @@ pub struct Board {
 
     /// nRF52 peripheral: I2S
     pub I2S: pac::I2S,
+
+    pub WIFI: wifi::WIFI,
     // wifi_en: p0::P0_16<nrf_gpio::Output<nrf_gpio::OpenDrain>>,
     // boot_mode: p0::P0_24<nrf_gpio::Output<nrf_gpio::PushPull>>,
     // esp_tx: p1::P1_05<nrf_gpio::Output<nrf_gpio::PushPull>>,
@@ -236,37 +237,6 @@ pub struct Board {
 }
 
 impl Board {
-    pub fn WIFI(self) -> wifi::WIFI {
-        let wifi_pins = uarte::Pins {
-            txd: self
-                .pins
-                .p1_05
-                .into_push_pull_output(nrf_gpio::Level::Low)
-                .degrade(),
-            rxd: self.pins.p1_04.degrade(),
-            cts: Some(self.pins.p1_06.degrade()),
-            rts: Some(
-                self.pins
-                    .p1_07
-                    .into_push_pull_output(nrf_gpio::Level::High)
-                    .degrade(),
-            ),
-        };
-        let uarte = uarte::Uarte::new(
-            self.UARTE1,
-            wifi_pins,
-            uarte::Parity::EXCLUDED,
-            uarte::Baudrate::BAUD921600,
-        );
-
-        let wifi_en = self.pins.p0_16.into_open_drain_output(
-            nrf_gpio::OpenDrainConfig::Standard0Disconnect1,
-            nrf_gpio::Level::Low,
-        );
-        let bootmode = self.pins.p0_24.into_push_pull_output(nrf_gpio::Level::Low);
-
-        wifi::WIFI::new(uarte, wifi_en, bootmode, Delay::new(self.SYST))
-    }
     pub fn take() -> Option<Self> {
         Some(Self::new(CorePeripherals::take()?, Peripherals::take()?))
     }
@@ -276,20 +246,48 @@ impl Board {
     }
 
     pub fn new(cp: CorePeripherals, p: Peripherals) -> Self {
-        let pins = gpio::Pins::new(p.P0, p.P1);
+        let mut pins = gpio::Pins::new(p.P0, p.P1);
+        let wifi_pins = uarte::Pins {
+            txd: pins
+                .p1_05
+                .take()
+                .unwrap()
+                .into_push_pull_output(nrf_gpio::Level::Low)
+                .degrade(),
+            rxd: pins.p1_04.take().unwrap().degrade(),
+            cts: Some(pins.p1_06.take().unwrap().degrade()),
+            rts: Some(
+                pins.p1_07
+                    .take()
+                    .unwrap()
+                    .into_push_pull_output(nrf_gpio::Level::High)
+                    .degrade(),
+            ),
+        };
+        let uarte = uarte::Uarte::new(
+            p.UARTE1,
+            wifi_pins,
+            uarte::Parity::EXCLUDED,
+            uarte::Baudrate::BAUD921600,
+        );
+
+        let wifi_en = pins.p0_24.take().unwrap().into_open_drain_output(
+            nrf_gpio::OpenDrainConfig::Standard0Disconnect1,
+            nrf_gpio::Level::Low,
+        );
+        let bootmode = pins
+            .p0_16
+            .take()
+            .unwrap()
+            .into_push_pull_output(nrf_gpio::Level::Low);
+        let mut timer = Timer::new(p.TIMER4);
+        timer.disable_interrupt();
+
+        let wifi = wifi::WIFI::new(uarte, wifi_en, bootmode, timer);
 
         Self {
             pins,
-            // wifi_en: pins.p0_16.into_open_drain_output(
-            //     nrf_gpio::OpenDrainConfig::Standard0Disconnect1,
-            //     nrf_gpio::Level::Low,
-            // ),
-            // boot_mode: pins.p0_24.into_push_pull_output(nrf_gpio::Level::Low),
-            // esp_tx: pins.p1_05.into_push_pull_output(nrf_gpio::Level::High),
-            // esp_rx: pins.p1_04,
-            // esp_cts: pins.p1_06,
-            // esp_rts: pins.p1_07.into_push_pull_output(nrf_gpio::Level::Low),
-            // Core peripherals
+            WIFI: wifi,
             CBP: cp.CBP,
             CPUID: cp.CPUID,
             DCB: cp.DCB,
@@ -312,7 +310,6 @@ impl Board {
 
             UART0: p.UART0,
             UARTE0: p.UARTE0,
-            UARTE1: p.UARTE1,
             SPIM0: p.SPIM0,
             SPIS0: p.SPIS0,
             TWIM0: p.TWIM0,
@@ -354,7 +351,6 @@ impl Board {
             SWI5: p.SWI5,
             EGU5: p.EGU5,
             TIMER3: p.TIMER3,
-            TIMER4: p.TIMER4,
             PWM0: p.PWM0,
             PDM: p.PDM,
             NVMC: p.NVMC,

@@ -13,11 +13,12 @@ edition = "2018"
 [dependencies]
 cortex-m = { version = "0.6.1", features = ["inline-asm", "const-fn"] }
 cortex-m-rt = "0.6.13"
-embedded-hal = "0.2.3"
+embedded-hal = "0.2.4"
 nrf52840-hal = "0.12.1"
 particle-gen3-common = { path = "../gen3-common/" }
 embedded-hal-spy = "0.0.3"
-at-commands = "0.4.0"
+at-commands = { version = "0.4.0", features = ["parser"] }
+embedded-error = "0.6.0"
 
 [dev-dependencies]
 cortex-m-rt = "0.6.11"
