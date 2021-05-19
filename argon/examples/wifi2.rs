@@ -7,6 +7,7 @@ extern crate panic_halt;
 use core::fmt::Write;
 use cortex_m_rt::entry;
 use nrf52840_hal::gpio::Level;
+use nrf52840_hal::prelude::_embedded_hal_blocking_delay_DelayMs;
 use nrf52840_hal::uarte;
 use nrf52840_hal::Delay;
 use particle_argon::Board;
@@ -29,24 +30,87 @@ fn main() -> ! {
         uarte::Baudrate::BAUD115200,
     );
 
+    uart.write_str("Starting\r\n");
     let mut delay = Delay::new(board.SYST);
 
     if board.WIFI.on(&mut delay).is_ok() {
-        uart.write_str("Wifi is online\r\n").unwrap();
+        uart.write_str("Wifi module is online\r\n").unwrap();
     } else {
-        uart.write_str("Wifi is offline\r\n").unwrap();
+        uart.write_str("Wifi module is offline\r\n").unwrap();
     }
 
-    uart.write_str("scanning\r\n");
-    let buf = board.WIFI.scan().unwrap();
+    // // uart.write_str("scanning\r\n");
+    // // let buf = board.WIFI.scan().unwrap();
 
+    // // uart.write(&buf);
+    // // uart.write_str("Finished Writing Buffer\r\n");
+    uart.write_str("Set syslog\r\n");
+    let buf = board.WIFI.enable_at_log().unwrap();
     uart.write(&buf);
-    uart.write_str("Finished Writing Buffer\r\n");
+    uart.write_str("set syslog\r\n");
+
+    uart.write_str("Get dhcp\r\n");
+    let buf = board.WIFI.get_dhcp().unwrap();
+    uart.write(&buf);
+    uart.write_str("got dhcp\r\n");
+
+    uart.write_str("Set dhcp\r\n");
+    let buf = board.WIFI.set_dhcp().unwrap();
+    uart.write(&buf);
+    uart.write_str("set dhcp\r\n");
+
+    uart.write_str("Get dhcp\r\n");
+    let buf = board.WIFI.get_dhcp().unwrap();
+    uart.write(&buf);
+    uart.write_str("got dhcp\r\n");
 
     uart.write_str("Connecting to Wifi\r\n");
-    let buf = board.WIFI.connect("devolo-846", "WGinet19").unwrap();
+    let buf = board.WIFI.connect("WGLAN", "WGinet19").unwrap();
     uart.write(&buf);
     uart.write_str("Finished Connecting to Wifi\r\n");
 
+    uart.write_str("Get mac\r\n");
+    let buf = board.WIFI.get_mac().unwrap();
+    uart.write(&buf);
+    uart.write_str("got mac\r\n");
+
+    uart.write_str("Get ip\r\n");
+    let buf = board.WIFI.get_ip().unwrap();
+    uart.write(&buf);
+    uart.write_str("got ip\r\n");
+
+    delay.delay_ms(1000_u32);
+
+    uart.write_str("HTTP:\r\n");
+    let buf = board.WIFI.http("http://192.168.0.118:8000/").unwrap();
+    uart.write(&buf);
+    uart.write_str("finished http\r\n");
+
+    // send data over tcp
+    // uart.write_str("Connect tcp\r\n");
+    // let buf = board.WIFI.tcp_connect("192.168.0.118", 8080).unwrap();
+    // uart.write(&buf);
+    // uart.write_str("connected\r\n");
+
+    // uart.write_str("Send data over tcp\r\n");
+    // let buf = board.WIFI.tcp_send("Hello world!").unwrap();
+    // uart.write(&buf);
+    // uart.write_str("connected\r\n");
+
+    // delay.delay_ms(1000_u32);
+    // uart.write_str("Testing mqtt\r\n");
+    // let buf = board.WIFI.m3qtt_conncfg().unwrap();
+    // uart.write(&buf);
+    // uart.write_str("finished mqtt\r\n");
+
+    // uart.write_str("Testing mqtt\r\n");
+    // let buf = board.WIFI.mqtt_query().unwrap();
+    // uart.write(&buf);
+    // uart.write_str("finished mqtt\r\n");
+
+    // uart.write_str("Disconnecting\r\n");
+    // let buf = board.WIFI.connect("devolo-846", "WGinet19").unwrap();
+    // uart.write(&buf);
+    // uart.write_str("Disconnected\r\n");
     loop {}
 }
