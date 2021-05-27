@@ -44,10 +44,15 @@ fn main() -> ! {
 
     // // uart.write(&buf);
     // // uart.write_str("Finished Writing Buffer\r\n");
-    uart.write_str("Set syslog\r\n");
-    let buf = board.WIFI.enable_at_log().unwrap();
+    // uart.write_str("Set syslog\r\n");
+    // let buf = board.WIFI.enable_at_log().unwrap();
+    // uart.write(&buf);
+    // uart.write_str("set syslog\r\n");
+
+    uart.write_str("Disable ipv6\r\n");
+    let buf = board.WIFI.disable_ipv6().unwrap();
     uart.write(&buf);
-    uart.write_str("set syslog\r\n");
+    uart.write_str("disabled ipv6\r\n");
 
     uart.write_str("Get dhcp\r\n");
     let buf = board.WIFI.get_dhcp().unwrap();
@@ -56,7 +61,7 @@ fn main() -> ! {
 
     uart.write_str("Set dhcp\r\n");
     let buf = board.WIFI.set_dhcp().unwrap();
-    uart.write(&buf);
+    uart.write_fmt(format_args!("dhcp resp: {:?}\r\n", &buf));
     uart.write_str("set dhcp\r\n");
 
     uart.write_str("Get dhcp\r\n");
@@ -81,10 +86,29 @@ fn main() -> ! {
 
     delay.delay_ms(1000_u32);
 
+    uart.write_str("Set dns\r\n");
+    let buf = board.WIFI.set_dns().unwrap();
+    uart.write(&buf);
+    uart.write_str("set dns\r\n");
+
+    uart.write_str("Get dns\r\n");
+    let buf = board.WIFI.get_dns().unwrap();
+    uart.write(&buf);
+    uart.write_str("got dns\r\n");
+
+    delay.delay_ms(1000_u32);
+
+    // ########################################### HTTP ##############################
     uart.write_str("HTTP:\r\n");
-    let buf = board.WIFI.http("http://192.168.0.118:8000/").unwrap();
+    let buf = board.WIFI.http("https://google.de/").unwrap();
     uart.write(&buf);
     uart.write_str("finished http\r\n");
+    // ###############################################################################
+
+    uart.write_str("Get dns\r\n");
+    let buf = board.WIFI.get_dns().unwrap();
+    uart.write(&buf);
+    uart.write_str("got dns\r\n");
 
     // send data over tcp
     // uart.write_str("Connect tcp\r\n");
@@ -97,6 +121,7 @@ fn main() -> ! {
     // uart.write(&buf);
     // uart.write_str("connected\r\n");
 
+    // ############################################ MQTT ################################
     // delay.delay_ms(1000_u32);
     // uart.write_str("Testing mqtt\r\n");
     // let buf = board.WIFI.m3qtt_conncfg().unwrap();
@@ -107,6 +132,8 @@ fn main() -> ! {
     // let buf = board.WIFI.mqtt_query().unwrap();
     // uart.write(&buf);
     // uart.write_str("finished mqtt\r\n");
+
+    // ##################################################################################
 
     // uart.write_str("Disconnecting\r\n");
     // let buf = board.WIFI.connect("devolo-846", "WGinet19").unwrap();

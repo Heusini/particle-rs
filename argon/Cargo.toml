@@ -19,6 +19,9 @@ particle-gen3-common = { path = "../gen3-common/" }
 embedded-hal-spy = "0.0.3"
 at-commands = { version = "0.4.0", features = ["parser"] }
 embedded-error = "0.6.0"
+atat = { path = "../../atat/atat" , features = ["serde_at", "derive"] }
+heapless = "0.7"
+no-std-net = { version = "0.5", features = ["serde"] }
 
 [dev-dependencies]
 cortex-m-rt = "0.6.11"

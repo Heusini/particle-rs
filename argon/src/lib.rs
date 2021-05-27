@@ -4,11 +4,16 @@ pub mod prelude {
     pub use nrf52840_hal::prelude::*;
 }
 
+#[macro_use]
+extern crate atat;
+
+pub mod commands;
 pub mod serial;
 mod wifi;
 
 pub use particle_gen3_common::*;
 
+use heapless::{spsc::Queue, String};
 use nrf52840_hal::gpio as nrf_gpio;
 use nrf52840_hal::pac;
 use nrf52840_hal::pac::{CorePeripherals, Peripherals};
