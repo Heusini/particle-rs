@@ -130,14 +130,19 @@ pub struct HttpCmd {
 }
 
 impl HttpCmd {
-    pub fn new(methode: HTTPMethode, url: &str, data: Option<String<2048>>) -> Self {
+    pub fn new(
+        methode: HTTPMethode,
+        url: &str,
+        transport_type: TransportType,
+        data: Option<String<2048>>,
+    ) -> Self {
         Self {
             methode,
-            content_type: ContentType::TEXT_XML,
+            content_type: ContentType::TextXml,
             url: url.into(),
             host: None,
             path: None,
-            transport_type: TransportType::SSL,
+            transport_type,
             data,
             header: None,
         }
@@ -186,10 +191,6 @@ impl AtatCmd<4352> for HttpCmd {
         }
 
         write!(buf, "\r\n").unwrap();
-
-        let ka = core::str::from_utf8(&buf).unwrap();
-        let x = true;
-
         buf
     }
 
@@ -218,8 +219,8 @@ impl AtatCmd<4352> for HttpCmd {
                 if size > 2048 {
                     return Err(atat::Error::Overflow);
                 } else {
-                    response.size = size;
-                    response.data = line.split(',').nth(1).unwrap_or("").into();
+                    response.size += size;
+                    write!(response.data, "{}", line.split(',').nth(1).unwrap_or("")).unwrap();
                 }
             }
         }

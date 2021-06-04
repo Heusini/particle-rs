@@ -1,6 +1,6 @@
-use core::fmt::Write;
 const BUF_SIZE: usize = 4096;
 
+#[allow(dead_code)]
 pub struct Serial<T> {
     pub stream: nrf52840_hal::Uarte<T>,
     buffer: [u8; BUF_SIZE],

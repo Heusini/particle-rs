@@ -1,9 +1,5 @@
 use at_commands::builder::CommandBuilder;
-use at_commands::parser::CommandParser;
-use atat::atat_derive::AtatCmd;
-use atat::atat_derive::AtatResp;
-use atat::{atat_derive, AtatCmd, ComQueue, IngressManager, ResQueue, UrcQueue};
-use core::fmt::Write;
+use atat::{AtatCmd, ComQueue, IngressManager, ResQueue, UrcQueue};
 use heapless::spsc::Queue;
 use nrf52840_hal::gpio;
 use nrf52840_hal::gpio::p0;
@@ -17,8 +13,7 @@ use nrf52840_hal::Timer;
 use crate::commands::responses::*;
 use crate::commands::types::*;
 use crate::commands::*;
-use core::array::IntoIter;
-use heapless::{String, Vec};
+use heapless::String;
 use no_std_net::Ipv4Addr;
 
 pub struct WIFI {
@@ -211,8 +206,15 @@ impl WIFI {
             10,
         )
     }
-    pub fn http_get(&mut self, url: &str) -> Result<HTTPResponse, WifiError> {
-        self.send_command(&HttpCmd::new(HTTPMethode::GET, url, None), 10)
+    pub fn http_get(
+        &mut self,
+        url: &str,
+        transport_type: TransportType,
+    ) -> Result<HTTPResponse, WifiError> {
+        self.send_command(
+            &HttpCmd::new(HTTPMethode::GET, url, transport_type, None),
+            10,
+        )
         // let mut buf: [u8; 1024] = [0; 1024];
         // let mut sendbuf: [u8; 128] = [0; 128];
 

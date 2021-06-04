@@ -1,6 +1,7 @@
 #![no_main]
 #![no_std]
 
+// extern crate base64;
 extern crate embedded_hal_spy;
 extern crate panic_halt;
 
@@ -33,7 +34,7 @@ fn test_httpcmd_asbyte() {
 
     let httpcmd = HttpCmd {
         methode: HTTPMethode::GET,
-        content_type: ContentType::JSON,
+        content_type: ContentType::Json,
         url: "asdf".into(),
         host: None,
         path: None,
@@ -109,8 +110,17 @@ fn main() -> ! {
     uart.write_str("got dns\r\n");
 
     uart.write_str("HTTP:\r\n");
-    let buf = board.WIFI.http_get("https://google.de/");
+    let buf = board
+        .WIFI
+        .http_get("http://192.168.0.118:8000/file", TransportType::TCP);
     uart.write_fmt(format_args!("HTTP response: {:?}\r\n", buf));
     uart.write_str("finished http\r\n");
+
+    let mut read_buf = [0u8; 2048];
+    let decode_conf = base64::Config::new(base64::CharacterSet::Standard, true);
+    let data = base64::decode_config_slice(&buf.unwrap().data, decode_conf, &mut read_buf);
+
+    uart.write(&read_buf);
+
     loop {}
 }

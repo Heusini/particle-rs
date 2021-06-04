@@ -17,10 +17,10 @@ pub enum HTTPMethode {
 
 #[derive(Debug, PartialEq, Clone, AtatEnum, Copy)]
 pub enum ContentType {
-    X_WWW_FORM_URLENCODED = 0,
-    JSON,
-    MULTIPART_FORM_DATA,
-    TEXT_XML,
+    XwwwFormUrlencoded = 0,
+    Json = 1,
+    MultipartFormData = 2,
+    TextXml = 3,
 }
 
 #[derive(Debug, PartialEq, Clone, AtatEnum, Copy)]
