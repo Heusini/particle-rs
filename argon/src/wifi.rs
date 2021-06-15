@@ -3,11 +3,9 @@ use atat::{AtatCmd, ComQueue, IngressManager, ResQueue, UrcQueue};
 use heapless::spsc::Queue;
 use nrf52840_hal::gpio;
 use nrf52840_hal::gpio::p0;
-use nrf52840_hal::pac::UARTE1;
 use nrf52840_hal::prelude::*;
 use nrf52840_hal::timer::OneShot;
 use nrf52840_hal::uarte;
-use nrf52840_hal::Delay;
 use nrf52840_hal::Timer;
 
 use crate::commands::responses::*;
@@ -16,11 +14,15 @@ use crate::commands::*;
 use heapless::String;
 use no_std_net::Ipv4Addr;
 
-pub struct WIFI {
-    uarte: uarte::Uarte<UARTE1>,
+pub struct WIFI<U, I>
+where
+    U: nrf52840_hal::uarte::Instance,
+    I: nrf52840_hal::timer::Instance,
+{
+    uarte: uarte::Uarte<U>,
     wifi_en: p0::P0_24<gpio::Output<gpio::OpenDrain>>,
     bootmode: p0::P0_16<gpio::Output<gpio::PushPull>>,
-    timer: Timer<nrf52840_hal::pac::TIMER4, OneShot>,
+    timer: Timer<I, OneShot>,
     ingress: IngressManager<atat::DefaultDigester, atat::DefaultUrcMatcher, 4096, 5>,
     res_c:
         heapless::spsc::Consumer<'static, Result<heapless::Vec<u8, 4096>, atat::InternalError>, 2>,
@@ -78,12 +80,16 @@ fn check_ok(buf: &[u8]) -> bool {
     false
 }
 
-impl WIFI {
+impl<U, I> WIFI<U, I>
+where
+    U: nrf52840_hal::uarte::Instance,
+    I: nrf52840_hal::timer::Instance,
+{
     pub fn new(
-        uarte: uarte::Uarte<UARTE1>,
+        uarte: uarte::Uarte<U>,
         wifi_en: p0::P0_24<gpio::Output<gpio::OpenDrain>>,
         bootmode: p0::P0_16<gpio::Output<gpio::PushPull>>,
-        timer: Timer<nrf52840_hal::pac::TIMER4, OneShot>,
+        timer: Timer<I, OneShot>,
     ) -> Self {
         static mut RES_Q: ResQueue<4096> = Queue::new();
         let (res_p, res_c) = unsafe { RES_Q.split() };
@@ -206,6 +212,36 @@ impl WIFI {
             10,
         )
     }
+
+    pub fn http_post(
+        &mut self,
+        url: &str,
+        transport_type: TransportType,
+        body: String<2048>,
+        content_type: ContentType,
+    ) -> Result<HTTPResponse, WifiError> {
+        self.send_command(
+            &HttpCmd::new(HTTPMethode::POST, url, transport_type, Some(body))
+                .with_content_type(content_type),
+            10,
+        )
+    }
+
+    pub fn enable_at_log(&mut self) -> Result<[u8; 255], WifiError> {
+        let mut buf: [u8; 255] = [0; 255];
+        let mut sendbuf: [u8; 128] = [0; 128];
+
+        CommandBuilder::create_set(&mut sendbuf, true)
+            .named("+SYSLOG")
+            .with_int_parameter(1)
+            .finish()?;
+
+        self.uarte.write(&sendbuf)?;
+        self.read(&mut buf, 10)?;
+
+        Ok(buf)
+    }
+
     pub fn http_get(
         &mut self,
         url: &str,
@@ -316,13 +352,13 @@ impl WIFI {
         Ok(buf)
     }
 
-    pub fn on(&mut self, delay: &mut Delay) -> Result<(), WifiError> {
+    pub fn on(&mut self) -> Result<(), WifiError> {
         self.wifi_en.set_low().unwrap();
-        delay.delay_ms(100_u32);
+        self.timer.delay_ms(100_u32);
         self.bootmode.set_high().unwrap();
-        delay.delay_ms(100_u32);
+        self.timer.delay_ms(100_u32);
         self.wifi_en.set_high().unwrap();
-        delay.delay_ms(100_u32);
+        self.timer.delay_ms(100_u32);
 
         self.check_esp()?;
 

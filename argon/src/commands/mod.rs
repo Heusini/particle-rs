@@ -147,6 +147,26 @@ impl HttpCmd {
             header: None,
         }
     }
+    pub fn with_content_type(mut self, content_type: ContentType) -> Self {
+        self.content_type = content_type;
+        self
+    }
+}
+
+fn escape_seq(msg: &[u8], out: &mut [u8]) -> usize {
+    let mut out_pos = 0;
+    for i in 0..msg.len() {
+        if msg[i] == b'\\' || msg[i] == b'"' || msg[i] == b',' {
+            out[out_pos] = b'\\';
+            out_pos += 1;
+            out[out_pos] = msg[i];
+            out_pos += 1;
+        } else {
+            out[out_pos] = msg[i];
+            out_pos += 1;
+        }
+    }
+    out_pos
 }
 
 impl AtatCmd<4352> for HttpCmd {
@@ -175,7 +195,16 @@ impl AtatCmd<4352> for HttpCmd {
         write!(buf, ",{}", self.transport_type as u8).unwrap();
 
         if let Some(data) = self.data.as_ref() {
-            write!(buf, ",\"{}\"", data).unwrap();
+            // this can crash all as this could exceed the buffer
+            let mut new_buf = [0u8; 2156];
+
+            let size = escape_seq(&data.as_bytes(), &mut new_buf);
+            write!(
+                buf,
+                ",\"{}\"",
+                core::str::from_utf8(&new_buf[..size]).unwrap()
+            )
+            .unwrap();
         }
 
         if let Some(header) = self.header.as_deref() {
